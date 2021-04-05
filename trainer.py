@@ -6,7 +6,7 @@ from torch import optim
 import torch.nn as nn
 from utils import *
 from action_utils import *
-
+from pprint import pprint
 Transition = namedtuple('Transition', ('state', 'action', 'action_out', 'value', 'episode_mask', 'episode_mini_mask', 'next_state',
                                        'reward', 'misc'))
 
@@ -30,8 +30,8 @@ class Trainer(object):
             state = self.env.reset(epoch)
         else:
             state = self.env.reset()
-        should_display = self.display and self.last_step
-
+        #should_display = self.display and self.last_step
+        should_display = self.display 
         if should_display:
             self.env.display()
         stat = dict()
@@ -64,8 +64,8 @@ class Trainer(object):
 
             action = select_action(self.args, action_out)
             action, actual = translate_action(self.args, self.env, action)
-            next_state, reward, done, info = self.env.step(actual)
 
+            next_state, reward, done, info = self.env.step(actual)
             # store comm_action in info for next step
             if self.args.hard_attn and self.args.commnet:
                 info['comm_action'] = action[-1] if not self.args.comm_action_one else np.ones(self.args.nagents, dtype=int)
@@ -82,7 +82,6 @@ class Trainer(object):
 
             # env should handle this make sure that reward for dead agents is not counted
             # reward = reward * misc['alive_mask']
-
             stat['reward'] = stat.get('reward', 0) + reward[:self.args.nfriendly]
             if hasattr(self.args, 'enemy_comm') and self.args.enemy_comm:
                 stat['enemy_reward'] = stat.get('enemy_reward', 0) + reward[self.args.nfriendly:]
@@ -104,7 +103,7 @@ class Trainer(object):
             trans = Transition(state, action, action_out, value, episode_mask, episode_mini_mask, next_state, reward, misc)
             episode.append(trans)
             state = next_state
-            if done:
+            if True in done:
                 break
         stat['num_steps'] = t + 1
         stat['steps_taken'] = stat['num_steps']

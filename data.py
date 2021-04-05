@@ -2,6 +2,8 @@ import sys
 import gym
 import ic3net_envs
 from env_wrappers import *
+from env.make_env import make_env
+
 
 def init(env_name, args, final_init=True):
     if env_name == 'levers':
@@ -29,7 +31,12 @@ def init(env_name, args, final_init=True):
         env = gym.make('StarCraftWrapper-v0')
         env.multi_agent_init(args, final_init)
         env = GymWrapper(env.env)
-
+    elif env_name == 'simple_tag':
+        env = make_env(env_name)
+        env = EnvWrapper(env)
+    elif env_name == 'simple_spread':
+        env = make_env(env_name)
+        env = EnvWrapper(env)
     else:
         raise RuntimeError("wrong env name")
 

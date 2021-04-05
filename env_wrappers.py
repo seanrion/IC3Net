@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from gym import spaces
 from inspect import getargspec
-
+from pprint import pprint
 class GymWrapper(object):
     '''
     for multi-agent
@@ -95,6 +95,98 @@ class GymWrapper(object):
                 _obs.append(np.concatenate(ag_obs))
             obs = np.stack(_obs)
 
+        obs = obs.reshape(1, -1, self.observation_dim)
+        obs = torch.from_numpy(obs).double()
+        return obs
+
+    def get_stat(self):
+        if hasattr(self.env, 'stat'):
+            self.env.stat.pop('steps_taken', None)
+            return self.env.stat
+        else:
+            return dict()
+
+
+class EnvWrapper(object):
+    '''
+    for multi-agent
+    '''
+
+    def __init__(self, env):
+        self.env = env
+
+    @property
+    def observation_dim(self):
+        '''
+        for multi-agent, this is the obs per agent
+        '''
+        # tuple space
+        return np.prod(self.env.observation_space[0].shape)
+
+    @property
+    def num_actions(self):
+        return self.action_space[0].n
+        
+
+    @property
+    def dim_actions(self):
+        # for multi-agent, this is the number of action per agent
+        if hasattr(self.env.action_space, 'nvec'):
+            # MultiDiscrete
+            return self.env.action_space.shape[0]
+            # return len(self.env.action_space.shape)
+        elif hasattr(self.env.action_space, 'n'):
+            # Discrete => only 1 action takes place at a time.
+            return 1
+        else :
+            return 1
+
+    @property
+    def action_space(self):
+        return self.env.action_space
+
+    def reset(self, epoch):
+        reset_args = getargspec(self.env.reset).args
+        if 'epoch' in reset_args:
+            obs = self.env.reset(epoch)
+        else:
+            obs = self.env.reset()
+
+        obs = self._flatten_obs(obs)
+        return obs
+
+    def display(self):
+        self.env.render()
+        time.sleep(0.02)
+
+    def end_display(self):
+        self.env._reset_render()
+
+    def step(self, action):
+        # TODO: Modify all environments to take list of action
+        # instead of doing this
+        if self.dim_actions == 1:
+            action = action[0]
+        obs, r, done, info = self.env.step(action)
+        r = np.array(r)
+        obs = self._flatten_obs(obs)
+        return (obs, r, done, info)
+
+    def reward_terminal(self):
+        if hasattr(self.env, 'reward_terminal'):
+            return self.env.reward_terminal()
+        else:
+            return np.zeros(1)
+
+    def _flatten_obs(self, obs):
+        max_dim = 0
+        for _ in obs:
+            max_dim = max(max_dim, len(_))
+        for x in range(len(obs)):
+            if len(obs[x]) < max_dim:
+                for i in range(max_dim-len(obs[x])):
+                    obs[x] = np.append(obs[x], 0)
+        obs = np.array(obs)
         obs = obs.reshape(1, -1, self.observation_dim)
         obs = torch.from_numpy(obs).double()
         return obs
