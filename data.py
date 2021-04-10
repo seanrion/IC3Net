@@ -32,12 +32,11 @@ def init(env_name, args, final_init=True):
         env.multi_agent_init(args, final_init)
         env = GymWrapper(env.env)
     elif env_name == 'simple_tag':
-        env = make_env(env_name)
+        env = make_env(env_name,args)
         env = EnvWrapper(env)
     elif env_name == 'simple_spread':
-        env = make_env(env_name)
+        env = make_env(env_name,args)
         env = EnvWrapper(env)
     else:
         raise RuntimeError("wrong env name")
-
     return env

@@ -17,6 +17,8 @@ class Trainer(object):
         self.policy_net = policy_net
         self.env = env
         self.display = False
+        self.record_video = False
+        self.video_name =  ''
         self.last_step = False
         self.optimizer = optim.RMSprop(policy_net.parameters(),
             lr = args.lrate, alpha=0.97, eps=1e-6)
@@ -30,13 +32,13 @@ class Trainer(object):
             state = self.env.reset(epoch)
         else:
             state = self.env.reset()
-        #should_display = self.display and self.last_step
-        should_display = self.display 
+        should_display = self.display and self.last_step
+        should_record_vedio = self.record_video and self.last_step
         if should_display:
             self.env.display()
         stat = dict()
         info = dict()
-        switch_t = -1
+
 
         prev_hid = torch.zeros(1, self.args.nagents, self.args.hid_size)
 
@@ -86,12 +88,17 @@ class Trainer(object):
             if hasattr(self.args, 'enemy_comm') and self.args.enemy_comm:
                 stat['enemy_reward'] = stat.get('enemy_reward', 0) + reward[self.args.nfriendly:]
 
-            done = done or t == self.args.max_steps - 1
 
+            if isinstance(done, bool) and done or isinstance(done, list) and True in done:
+                done = True
+            else:
+                done = False
+            done = done or t == self.args.max_steps - 1
+            
             episode_mask = np.ones(reward.shape)
             episode_mini_mask = np.ones(reward.shape)
 
-            if done:
+            if isinstance(done, bool) and done or isinstance(done, list) and True in done:
                 episode_mask = np.zeros(reward.shape)
             else:
                 if 'is_completed' in info:
@@ -100,11 +107,19 @@ class Trainer(object):
             if should_display:
                 self.env.display()
 
+            if should_record_vedio:
+                self.env.start_record(self.video_name)
+
             trans = Transition(state, action, action_out, value, episode_mask, episode_mini_mask, next_state, reward, misc)
             episode.append(trans)
             state = next_state
-            if True in done:
+
+            if should_record_vedio and done:
+                self.env.end_record()
+            if done:
                 break
+
+        
         stat['num_steps'] = t + 1
         stat['steps_taken'] = stat['num_steps']
 
@@ -122,6 +137,7 @@ class Trainer(object):
 
         if hasattr(self.env, 'get_stat'):
             merge_stat(self.env.get_stat(), stat)
+
         return (episode, stat)
 
     def compute_grad(self, batch):

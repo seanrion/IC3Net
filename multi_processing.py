@@ -3,15 +3,16 @@ from utils import *
 import torch
 import torch.multiprocessing as mp
 
+
 class MultiProcessWorker(mp.Process):
     # TODO: Make environment init threadsafe
-    def __init__(self, id, trainer_maker, comm, seed, *args, **kwargs):
+    def __init__(self, id, trainer_maker, comm, seed, * args, **kwargs):
         self.id = id
         self.seed = seed
         super(MultiProcessWorker, self).__init__()
         self.trainer = trainer_maker()
         self.comm = comm
-
+        
     def run(self):
         torch.manual_seed(self.seed + self.id + 1)
         np.random.seed(self.seed + self.id + 1)
@@ -40,6 +41,7 @@ class MultiProcessWorker(mp.Process):
 
 class MultiProcessTrainer(object):
     def __init__(self, args, trainer_maker):
+        #mp.set_start_method('spawn')
         self.comms = []
         self.trainer = trainer_maker()
         # itself will do the same job as workers
@@ -47,7 +49,7 @@ class MultiProcessTrainer(object):
         for i in range(self.nworkers):
             comm, comm_remote = mp.Pipe()
             self.comms.append(comm)
-            worker = MultiProcessWorker(i, trainer_maker, comm_remote, seed=args.seed)
+            worker = MultiProcessWorker(i, trainer_maker, comm_remote, args.seed)
             worker.start()
         self.grads = None
         self.worker_grads = None
@@ -102,3 +104,6 @@ class MultiProcessTrainer(object):
 
     def load_state_dict(self, state):
         self.trainer.load_state_dict(state)
+
+
+

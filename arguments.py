@@ -66,8 +66,6 @@ def get_args():
                     help="enable commnet model")
     parser.add_argument('--ic3net', action='store_true', default=False,
                     help="enable commnet model")
-    parser.add_argument('--nagents', type=int, default=3,
-                    help="Number of agents (used in multiagent)")
     parser.add_argument('--comm_mode', type=str, default='avg',
                     help="Type of mode for communication tensor calculation [avg|sum]")
     parser.add_argument('--comm_passes', type=int, default=1,
@@ -91,8 +89,34 @@ def get_args():
                     help='Whether to multipy log porb for each chosen action with advantages')
     parser.add_argument('--share_weights', default=False, action='store_true',
                     help='Share weights for hops')
+    
+    parser.add_argument('--record_video', action='store_true', default=False)
+    parser.add_argument('--video_name', default='', type=str)
+    parser.add_argument('--landmark_size', default=0.1, type=float)
+    parser.add_argument('--num_landmarks',default=3,type=int)
+    parser.add_argument('--arena_size', default=1.0, type=float)
+    parser.add_argument('--collaborative', default=True, type=bool)
+    parser.add_argument('--silent', default=True, type=bool)
+    #simple_spread
+    parser.add_argument('--nagents',default=3,type=int)
+    parser.add_argument('--agent_size', default=0.2, type=float)
 
+    #simple_tag
+    parser.add_argument('--num_good_agents', default=1, type=int)
+    parser.add_argument('--num_adversaries', default=2, type=int)
+    parser.add_argument('--adversary_size', default=0.2, type=float)
+    parser.add_argument('--good_size', default=0.1, type=float)
+    parser.add_argument('--adversary_accel', default=3.0, type=float)
+    parser.add_argument('--good_accel', default=1.0, type=float)
+    parser.add_argument('--adversary_max_speed', default=1.0, type=float)
+    parser.add_argument('--good_max_speed', default=0.5, type=float)
 
     init_args_for_env(parser)
     args = parser.parse_args()
+    if args.env_name == 'simple_tag':
+        args.nagents = args.num_good_agents + args.num_adversaries
+
+    if args.record_video == True:
+        args.display = True
+
     return args

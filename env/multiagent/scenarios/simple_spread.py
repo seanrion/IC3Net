@@ -1,25 +1,24 @@
 import numpy as np
 from env.multiagent.core import World, Agent, Landmark
 from env.multiagent.scenario import BaseScenario
-from scipy.optimize import linear_sum_assignment
+
 
 
 class Scenario(BaseScenario):
-    def __init__(self, num_agents=3, num_landmarks=3, arena_size=1,collaborative = True,silent = True,
-                 agent_size=0.15, landmark_size= 0.1):
+    def __init__(self, args):
         #智能体数量
-        self.num_agents = num_agents
+        self.num_agents = args.nagents
         #地标数量
-        self.num_landmarks = num_landmarks
+        self.num_landmarks = args.num_landmarks
         #距离门槛，即智能体离地标有多近算成功
         #舞台大小，关系到随机出生地距离舞台中心有多远
-        self.arena_size = arena_size
+        self.arena_size = args.arena_size
         #智能体间是否合作
-        self.collaborative = collaborative
+        self.collaborative = args.collaborative
         self.is_success = 0
-        self.silent = silent
-        self.agent_size = agent_size
-        self.landmark_size = landmark_size
+        self.silent = args.silent
+        self.agent_size = args.agent_size
+        self.landmark_size = args.landmark_size
 
     def make_world(self):
         world = World()
@@ -129,7 +128,6 @@ class Scenario(BaseScenario):
     def done(self, agent, world):
         success = False
         for l in world.landmarks:
-            dist = np.sqrt(np.sum(np.square(agent.state.p_pos - l.state.p_pos)))
             if self.is_collision(l, agent):
                 success = True
                 self.is_success += 1
@@ -141,5 +139,11 @@ class Scenario(BaseScenario):
         return success
 
     def info(self, agent, world):
-        info = {'is_success': self.is_success==self.num_agents}
-        return info
+        return []
+    
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)

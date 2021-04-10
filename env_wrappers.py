@@ -4,6 +4,27 @@ import torch
 from gym import spaces
 from inspect import getargspec
 from pprint import pprint
+import imageio
+
+try:
+    import pyglet
+except ImportError as e:
+    reraise(
+        suffix="HINT: you can install pyglet directly via 'pip install pyglet'. But if you really just want to install all Gym dependencies and not have to think about it, 'pip install -e .[all]' or 'pip install gym[all]' will do it.")
+
+try:
+    from pyglet.gl import *
+except ImportError as e:
+    reraise(prefix="Error occured while running `from pyglet.gl import *`",
+            suffix="HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'. If you're running on a server, you may need a virtual frame buffer; something like this should work: 'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'")
+
+
+
+
+
+
+
+
 class GymWrapper(object):
     '''
     for multi-agent
@@ -65,7 +86,7 @@ class GymWrapper(object):
 
     def display(self):
         self.env.render()
-        time.sleep(0.5)
+        time.sleep(0.02)
 
     def end_display(self):
         self.env.exit_render()
@@ -114,6 +135,8 @@ class EnvWrapper(object):
 
     def __init__(self, env):
         self.env = env
+        self.video = []
+        self.video_name = ''
 
     @property
     def observation_dim(self):
@@ -155,9 +178,23 @@ class EnvWrapper(object):
         obs = self._flatten_obs(obs)
         return obs
 
+    def start_record(self,name):
+        self.video_name = name
+        pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().save(name+'.png')
+        self.video.append(imageio.imread(name+'.png'))
+
+
+    def end_record(self):
+        imageio.mimsave(self.video_name+'.gif', self.video, 'GIF')
+        self.video_name = ''
+        self.video = []
+
+
     def display(self):
         self.env.render()
-        time.sleep(0.02)
+
+        
+
 
     def end_display(self):
         self.env._reset_render()
@@ -170,6 +207,7 @@ class EnvWrapper(object):
         obs, r, done, info = self.env.step(action)
         r = np.array(r)
         obs = self._flatten_obs(obs)
+
         return (obs, r, done, info)
 
     def reward_terminal(self):

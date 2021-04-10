@@ -4,27 +4,25 @@ from env.multiagent.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
-    def __init__(self, num_good_agents=1, num_adversaries=2, num_landmarks=2,arena_size=1, collaborative=True,
-                 silent=True,adversary_size = 0.075,good_size=0.05,adversary_accel = 3.0,good_accel = 1.0,
-                 adversary_max_speed=1.0, good_max_speed=0.5, landmark_size = 0.2):
+    def __init__(self,args):
         #智能体数量
-        self.num_good_agents = num_good_agents
-        self.num_adversaries = num_adversaries
+        self.num_good_agents = args.num_good_agents
+        self.num_adversaries = args.num_adversaries
         #地标数量
-        self.num_landmarks = num_landmarks
+        self.num_landmarks = args.num_landmarks
         #舞台大小，关系到随机出生地距离舞台中心有多远
-        self.arena_size = arena_size
+        self.arena_size = args.arena_size
         #智能体间是否合作
-        self.collaborative = collaborative
+        self.collaborative = args.collaborative
         self.is_success = 0
-        self.silent = silent
-        self.adversary_size = adversary_size
-        self.adversary_accel = adversary_accel
-        self.adversary_max_speed = adversary_max_speed
-        self.good_size = good_size
-        self.good_accel = good_accel
-        self.good_max_speed = good_max_speed
-        self.landmark_size = landmark_size
+        self.silent = args.silent
+        self.adversary_size = args.adversary_size
+        self.adversary_accel = args.adversary_accel
+        self.adversary_max_speed = args.adversary_max_speed
+        self.good_size = args.good_size
+        self.good_accel = args.good_accel
+        self.good_max_speed = args.good_max_speed
+        self.landmark_size = args.landmark_size
 
     def make_world(self):
         world = World()
