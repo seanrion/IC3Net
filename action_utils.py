@@ -12,6 +12,7 @@ def parse_action_args(args):
     else:
         # environment takes continuous action
         actions_heads = args.nactions.split(':')
+        print(actions_heads)
         if len(actions_heads) == 1 and int(actions_heads[0]) == 1:
             args.continuous = True
         elif len(actions_heads) == 1 and int(actions_heads[0]) > 1:

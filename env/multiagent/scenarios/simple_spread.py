@@ -15,10 +15,10 @@ class Scenario(BaseScenario):
         self.arena_size = args.arena_size
         #智能体间是否合作
         self.collaborative = args.collaborative
-        self.is_success = 0
         self.silent = args.silent
         self.agent_size = args.agent_size
         self.landmark_size = args.landmark_size
+
 
     def make_world(self):
         world = World()
@@ -56,10 +56,12 @@ class Scenario(BaseScenario):
                      for a in world.agents]
             min_dists += min(dists)
             rew -= min(dists)
-            if min(dists) < 0.1:
+            if self.is_collision(l, agent):
                 occupied_landmarks += 1
         if agent.collide:
             for a in world.agents:
+                if a is agent:
+                    continue
                 if self.is_collision(a, agent):
                     rew -= 1
                     collisions += 1
@@ -84,7 +86,6 @@ class Scenario(BaseScenario):
         for i, landmark in enumerate(world.landmarks):
             landmark.state.p_pos = np.random.uniform(-self.arena_size, self.arena_size, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
-        self.is_success = 0
 
     def is_collision(self, agent1, agent2):
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
@@ -94,15 +95,34 @@ class Scenario(BaseScenario):
 
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark, penalized for collisions
+        # rew = 0
+        # for l in world.landmarks:
+        #     dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos)))
+        #              for a in world.agents]
+        #     rew -= min(dists)
+        # if agent.collide:
+        #     for a in world.agents:
+        #         if a is agent:
+        #             continue
+        #         if self.is_collision(a, agent):
+        #             rew -= 1
         rew = 0
         for l in world.landmarks:
             dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos)))
                      for a in world.agents]
             rew -= min(dists)
-        if agent.collide:
-            for a in world.agents:
-                if self.is_collision(a, agent):
-                    rew -= 1
+
+        for a in world.agents:
+            if a is agent:
+                continue
+            if self.is_collision(a, agent):
+                dist_value = 1
+            else:
+                dist_value = np.exp(-np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))))
+            rew -= dist_value
+        # vels = [np.sqrt(np.sum(np.square(a.state.p_vel)))for a in world.agents]
+        # vel = min(vels)
+        # rew += vel if vel<1 else 1
         return rew
 
     def observation(self, agent, world):
@@ -122,21 +142,22 @@ class Scenario(BaseScenario):
                 continue
             comm.append(other.state.c)
             other_pos.append(other.state.p_pos - agent.state.p_pos)
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)
+        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos)
+        # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)
 
 
     def done(self, agent, world):
-        success = False
-        for l in world.landmarks:
-            if self.is_collision(l, agent):
-                success = True
-                self.is_success += 1
-                break
-        if agent.collide:
-            for a in world.agents:
-                if self.is_collision(a, agent):
-                    return False
-        return success
+        index = 0
+        is_collision = []
+        for i, a in enumerate(world.agents):
+            if a is agent:
+                index = i
+        for a in world.agents:
+            is_collision.append(self.is_collision(a, world.landmarks[index]))
+        
+        return is_collision.count(True)==1
+
+
 
     def info(self, agent, world):
         return []

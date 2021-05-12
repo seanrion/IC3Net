@@ -35,7 +35,6 @@ def run(num_epochs):
             merge_stat(s, stat)
             trainer.display = False
             trainer.record_video = False
-
         epoch_time = time.time() - epoch_begin_time
         epoch = len(log['epoch'].data) + 1
         for k, v in log.items():
@@ -47,6 +46,7 @@ def run(num_epochs):
                 v.data.append(stat.get(k, 0))
 
         np.set_printoptions(precision=2)
+
 
         print('Epoch {}\tReward {}\tTime {:.2f}s'.format(
             epoch, stat['reward'], epoch_time
@@ -65,16 +65,20 @@ def run(num_epochs):
         if 'enemy_comm' in stat.keys():
             print('Enemy-Comm: {}'.format(stat['enemy_comm']))
 
+        if stat['steps_taken'] < args.difficulty_level_threshold:
+            if trainer.difficulty_level < args.nagents:
+                trainer.difficulty_level += 1
+                print('Change to next difficulty_level:{}'.format(trainer.difficulty_level))
         if args.plot:
             for k, v in log.items():
                 if v.plot and len(v.data) > 0:
                     vis.line(np.asarray(v.data), np.asarray(log[v.x_axis].data[-len(v.data):]),
                              win=k, opts=dict(xlabel=v.x_axis, ylabel=k))
 
-        if args.save_every and ep and args.save != '' and ep % args.save_every == 0:
+        if args.save_every and epoch and args.save != '' and epoch % args.save_every == 0:
             # fname, ext = args.save.split('.')
             # save(fname + '_' + str(ep) + '.' + ext)
-            save(args.save + '_' + str(ep))
+            save(args.save + '_' + str(epoch))
 
         if args.save != '':
             save(args.save)
@@ -126,13 +130,13 @@ if __name__ =='__main__':
 
     num_inputs = env.observation_dim
     args.num_actions = env.num_actions
-
     # Multi-action
     if not isinstance(args.num_actions, (list, tuple)): # single action case
         args.num_actions = [args.num_actions]
     args.dim_actions = env.dim_actions
     args.num_inputs = num_inputs
-
+    if args.commnet:
+        args.collaborative = True
     # Hard attention
     if args.hard_attn and args.commnet:
         # add comm_action as last dim in actions

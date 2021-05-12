@@ -8,9 +8,9 @@ def get_args():
     # note: number of steps per epoch = epoch_size X batch_size x nprocesses
     parser.add_argument('--num_epochs', default=100, type=int,
                     help='number of training epochs')
-    parser.add_argument('--epoch_size', type=int, default=10,
+    parser.add_argument('--epoch_size', type=int, default=50,
                     help='number of update iterations in an epoch')
-    parser.add_argument('--batch_size', type=int, default=500,
+    parser.add_argument('--batch_size', type=int, default=100,
                     help='number of steps before each update (per thread)')
     parser.add_argument('--nprocesses', type=int, default=1,
                     help='How many processes to run')
@@ -20,7 +20,7 @@ def get_args():
     parser.add_argument('--recurrent', action='store_true', default=False,
                     help='make the model recurrent in time')
     # optimization
-    parser.add_argument('--gamma', type=float, default=1.0,
+    parser.add_argument('--gamma', type=float, default=0.6,
                     help='discount factor')
     parser.add_argument('--tau', type=float, default=1.0,
                     help='gae (remove?)')
@@ -28,7 +28,7 @@ def get_args():
                     help='random seed. Pass -1 for random seed')  # TODO: works in thread?
     parser.add_argument('--normalize_rewards', action='store_true', default=False,
                     help='normalize rewards in each batch')
-    parser.add_argument('--lrate', type=float, default=0.001,
+    parser.add_argument('--lrate', type=float, default=0.0005,
                     help='learning rate')
     parser.add_argument('--entr', type=float, default=0,
                     help='entropy regularization coeff')
@@ -95,7 +95,7 @@ def get_args():
     parser.add_argument('--landmark_size', default=0.1, type=float)
     parser.add_argument('--num_landmarks',default=3,type=int)
     parser.add_argument('--arena_size', default=1.0, type=float)
-    parser.add_argument('--collaborative', default=True, type=bool)
+    parser.add_argument('--collaborative',  action='store_true', default=False)
     parser.add_argument('--silent', default=True, type=bool)
     #simple_spread
     parser.add_argument('--nagents',default=3,type=int)
@@ -111,12 +111,19 @@ def get_args():
     parser.add_argument('--adversary_max_speed', default=1.0, type=float)
     parser.add_argument('--good_max_speed', default=0.5, type=float)
 
+    parser.add_argument('--benchmark', default=False, action='store_true')
+    parser.add_argument('--difficulty_level_threshold', default=20.0, type=float)
+
     init_args_for_env(parser)
     args = parser.parse_args()
     if args.env_name == 'simple_tag':
         args.nagents = args.num_good_agents + args.num_adversaries
 
+    if args.video_name != '':
+        args.record_video = True
+
     if args.record_video == True:
         args.display = True
 
+    args.difficulty_level_threshold = args.max_steps/2
     return args

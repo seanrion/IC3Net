@@ -23,7 +23,7 @@ class Trainer(object):
         self.optimizer = optim.RMSprop(policy_net.parameters(),
             lr = args.lrate, alpha=0.97, eps=1e-6)
         self.params = [p for p in self.policy_net.parameters()]
-
+        self.difficulty_level = 1
 
     def get_episode(self, epoch):
         episode = []
@@ -38,7 +38,6 @@ class Trainer(object):
             self.env.display()
         stat = dict()
         info = dict()
-
 
         prev_hid = torch.zeros(1, self.args.nagents, self.args.hid_size)
 
@@ -66,8 +65,10 @@ class Trainer(object):
 
             action = select_action(self.args, action_out)
             action, actual = translate_action(self.args, self.env, action)
+            #print(action_out)
 
             next_state, reward, done, info = self.env.step(actual)
+            #print(next_state)
             # store comm_action in info for next step
             if self.args.hard_attn and self.args.commnet:
                 info['comm_action'] = action[-1] if not self.args.comm_action_one else np.ones(self.args.nagents, dtype=int)
@@ -88,8 +89,7 @@ class Trainer(object):
             if hasattr(self.args, 'enemy_comm') and self.args.enemy_comm:
                 stat['enemy_reward'] = stat.get('enemy_reward', 0) + reward[self.args.nfriendly:]
 
-
-            if isinstance(done, bool) and done or isinstance(done, list) and True in done:
+            if isinstance(done, bool) and done or isinstance(done, list) and done.count(True) >= self.difficulty_level:
                 done = True
             else:
                 done = False
@@ -98,7 +98,7 @@ class Trainer(object):
             episode_mask = np.ones(reward.shape)
             episode_mini_mask = np.ones(reward.shape)
 
-            if isinstance(done, bool) and done or isinstance(done, list) and True in done:
+            if isinstance(done, bool) and done or isinstance(done, list) and done.count(True) >= self.difficulty_level:
                 episode_mask = np.zeros(reward.shape)
             else:
                 if 'is_completed' in info:

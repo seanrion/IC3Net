@@ -12,8 +12,8 @@ class MultiAgentEnv(gym.Env):
     }
 
     def __init__(self, world, reset_callback=None, reward_callback=None,
-                 observation_callback=None, info_callback=None,
-                 done_callback=None, discrete_action_space=True, cam_range = 2,discrete_action_input=True, shared_viewer=True):
+                 observation_callback=None, done_callback=None, info_callback=None,
+                  discrete_action_space=True, cam_range = 2,discrete_action_input=True, shared_viewer=True):
 
         self.world = world
         self.agents = self.world.policy_agents
@@ -97,10 +97,9 @@ class MultiAgentEnv(gym.Env):
             info_n['n'].append(self._get_info(agent))
 
         # all agents get total reward in cooperative case
-        reward = np.sum(reward_n)
+        reward = np.average(reward_n)
         if self.shared_reward:
             reward_n = [reward] * self.n
-
         return obs_n, reward_n, done_n, info_n
 
     def reset(self):
